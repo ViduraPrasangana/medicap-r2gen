@@ -9,4 +9,5 @@ python main.py \
 --save_dir results/mimic_cxr \
 --step_size 1 \
 --gamma 0.8 \
---seed 456789
+--seed 456789 ${@:1}
+ 
