@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
-from chexnet import DenseNet121
+from .chexnet import DenseNet121
 import os
 
 
