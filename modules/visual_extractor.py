@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
+from chexnet import DenseNet121
+import os
 
 
 class VisualExtractor(nn.Module):
@@ -8,7 +10,17 @@ class VisualExtractor(nn.Module):
         super(VisualExtractor, self).__init__()
         self.visual_extractor = args.visual_extractor
         self.pretrained = args.visual_extractor_pretrained
-        model = getattr(models, self.visual_extractor)(pretrained=self.pretrained)
+        if(self.visual_extractor == "chexnet"):
+            model = DenseNet121().cuda()
+            if os.path.isfile(args.chexnet_checkpoint):
+                print("=> loading checkpoint")
+                checkpoint = torch.load(CKPT_PATH)
+                model.load_state_dict(checkpoint['state_dict'])
+                print("=> loaded checkpoint")
+            else:
+                print("=> no checkpoint found")
+        else:
+            model = getattr(models, self.visual_extractor)(pretrained=self.pretrained)
         modules = list(model.children())[:-2]
         self.model = nn.Sequential(*modules)
         self.avg_fnt = torch.nn.AvgPool2d(kernel_size=7, stride=1, padding=0)
