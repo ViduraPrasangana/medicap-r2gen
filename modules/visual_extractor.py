@@ -14,7 +14,7 @@ class VisualExtractor(nn.Module):
             model = DenseNet121().cuda()
             if os.path.isfile(args.chexnet_checkpoint):
                 print("=> loading checkpoint")
-                checkpoint = torch.load(CKPT_PATH)
+                checkpoint = torch.load(args.chexnet_checkpoint)
                 model.load_state_dict(checkpoint['state_dict'])
                 print("=> loaded checkpoint")
             else:
