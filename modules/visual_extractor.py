@@ -16,7 +16,10 @@ class VisualExtractor(nn.Module):
             if os.path.isfile(args.chexnet_checkpoint):
                 print("=> loading checkpoint")
                 checkpoint = torch.load(args.chexnet_checkpoint)
-                model.load_state_dict(checkpoint['state_dict'])
+                state_dict = checkpoint['state_dict']
+                for key in list(state_dict.keys()):
+                    state_dict[key.replace('.1.', '1.'). replace('.2.', '2.')] = state_dict.pop(key)
+                model.load_state_dict(state_dict)
                 print("=> loaded checkpoint")
             else:
                 print("=> no checkpoint found")
