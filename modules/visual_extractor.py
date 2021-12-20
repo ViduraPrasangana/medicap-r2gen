@@ -12,6 +12,7 @@ class VisualExtractor(nn.Module):
         self.pretrained = args.visual_extractor_pretrained
         if(self.visual_extractor == "chexnet"):
             model = DenseNet121().cuda()
+            model = torch.nn.DataParallel(model).cuda()
             if os.path.isfile(args.chexnet_checkpoint):
                 print("=> loading checkpoint")
                 checkpoint = torch.load(args.chexnet_checkpoint)
