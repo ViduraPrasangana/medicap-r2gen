@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torchvision
+from torchsummary import summary
 
 
 class DenseNet121(nn.Module):
@@ -13,11 +14,14 @@ class DenseNet121(nn.Module):
     def __init__(self, out_size=14):
         super(DenseNet121, self).__init__()
         self.densenet121 = torchvision.models.densenet121(pretrained=True)
+        summary(self.densenet121, (3, 224, 224))
         num_ftrs = self.densenet121.classifier.in_features
         self.densenet121.classifier = nn.Sequential(
             nn.Linear(num_ftrs, out_size),
             nn.Sigmoid()
         )
+        summary(self.densenet121, (3, 224, 224))
+
 
     def forward(self, x):
         x = self.densenet121(x)
