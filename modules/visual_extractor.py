@@ -3,7 +3,7 @@ import torch.nn as nn
 import torchvision.models as models
 from .chexnet import DenseNet121
 import os
-from torchsummary import summary
+from torchinfo import summary
 
 
 class VisualExtractor(nn.Module):
@@ -28,7 +28,7 @@ class VisualExtractor(nn.Module):
             model = getattr(models, self.visual_extractor)(pretrained=self.pretrained)
         modules = list(model.children())[:-2]
         self.model = nn.Sequential(*modules)
-        summary(self.model, (3, 224, 224))
+        summary(self.model,input_size=(16,3, 224, 224))
         self.avg_fnt = torch.nn.AvgPool2d(kernel_size=7, stride=1, padding=0)
 
     def forward(self, images):
