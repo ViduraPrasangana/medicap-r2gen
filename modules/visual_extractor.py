@@ -29,14 +29,14 @@ class VisualExtractor(nn.Module):
             model = getattr(models, self.visual_extractor)(pretrained=self.pretrained)
             modules = list(model.children())[:-2]
         summary(model,input_size=(16,3, 224, 224))
-        print(modules)
+        # print(modules)
         self.model = nn.Sequential(*modules)
         # summary(self.model,input_size=(16,3, 224, 224))
         self.avg_fnt = torch.nn.AvgPool2d(kernel_size=7, stride=1, padding=0)
 
     def forward(self, images):
         patch_feats = self.model(images)
-        print("model out",patch_feats.size())
+        # print("model out",patch_feats.size())
         avg_feats = self.avg_fnt(patch_feats).squeeze().reshape(-1, patch_feats.size(1))
         batch_size, feat_size, _, _ = patch_feats.shape
         patch_feats = patch_feats.reshape(batch_size, feat_size, -1).permute(0, 2, 1)
