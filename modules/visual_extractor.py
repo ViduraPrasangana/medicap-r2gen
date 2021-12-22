@@ -13,13 +13,12 @@ class VisualExtractor(nn.Module):
         self.pretrained = args.visual_extractor_pretrained
         if(self.visual_extractor == "chexnet"):
             model = DenseNet121()
-            model = torch.nn.DataParallel(model).cuda()
             if os.path.isfile(args.chexnet_checkpoint):
                 print("=> loading checkpoint")
                 checkpoint = torch.load(args.chexnet_checkpoint)
                 state_dict = checkpoint['state_dict']
                 for key in list(state_dict.keys()):
-                    state_dict[key.replace('.1.', '1.'). replace('.2.', '2.')] = state_dict.pop(key)
+                    state_dict[key[7:].replace('.1.', '1.'). replace('.2.', '2.')] = state_dict.pop(key)
                 model.load_state_dict(state_dict)
                 print("=> loaded checkpoint")
             else:
