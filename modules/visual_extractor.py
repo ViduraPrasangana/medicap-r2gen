@@ -31,7 +31,7 @@ class VisualExtractor(nn.Module):
         summary(model,input_size=(16,3, 224, 224))
         print(modules)
         self.model = nn.Sequential(*modules)
-        summary(self.model,input_size=(16,3, 224, 224))
+        # summary(self.model,input_size=(16,3, 224, 224))
         self.avg_fnt = torch.nn.AvgPool2d(kernel_size=7, stride=1, padding=0)
 
     def forward(self, images):
