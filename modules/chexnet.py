@@ -4,7 +4,7 @@ import torchvision
 from torchinfo import summary
 
 
-class DenseNet121(nn.Module):
+class DenseNet121():
     """Model modified.
 
     The architecture of our model is the same as standard DenseNet121
@@ -23,7 +23,6 @@ class DenseNet121(nn.Module):
         summary(self.densenet121, input_size=(16,3, 224, 224))
 
 
-    def forward(self, x):
-        x = self.densenet121(x)
-        return x
+    def get_model(self):
+        return self.densenet121
 

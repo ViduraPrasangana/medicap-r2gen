@@ -12,7 +12,7 @@ class VisualExtractor(nn.Module):
         self.visual_extractor = args.visual_extractor
         self.pretrained = args.visual_extractor_pretrained
         if(self.visual_extractor == "chexnet"):
-            model = DenseNet121()
+            model = DenseNet121().get_model()
             if os.path.isfile(args.chexnet_checkpoint):
                 print("=> loading checkpoint")
                 checkpoint = torch.load(args.chexnet_checkpoint)
