@@ -24,9 +24,10 @@ class VisualExtractor(nn.Module):
                 print("=> loaded checkpoint")
             else:
                 print("=> no checkpoint found")
+            modules = list(model.children())[:-1]
         else:
             model = getattr(models, self.visual_extractor)(pretrained=self.pretrained)
-        modules = list(model.children())[:-2]
+            modules = list(model.children())[:-2]
         summary(model,input_size=(16,3, 224, 224))
         print(modules)
         self.model = nn.Sequential(*modules)
