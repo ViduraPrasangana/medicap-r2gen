@@ -12,7 +12,7 @@ class VisualExtractor(nn.Module):
         self.visual_extractor = args.visual_extractor
         self.pretrained = args.visual_extractor_pretrained
         if(self.visual_extractor == "chexnet"):
-            model = DenseNet121().get_model()
+            model = DenseNet121()
             if os.path.isfile(args.chexnet_checkpoint):
                 print("=> loading checkpoint")
                 checkpoint = torch.load(args.chexnet_checkpoint)
@@ -20,6 +20,7 @@ class VisualExtractor(nn.Module):
                 for key in list(state_dict.keys()):
                     state_dict[key[7:].replace('.1.', '1.'). replace('.2.', '2.')] = state_dict.pop(key)
                 model.load_state_dict(state_dict)
+                model = model.get_model()
                 print("=> loaded checkpoint")
             else:
                 print("=> no checkpoint found")
