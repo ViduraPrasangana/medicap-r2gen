@@ -145,7 +145,7 @@ class BaseTrainer(object):
         resume_path = str(resume_path)
         print("Loading checkpoint: {} ...".format(resume_path))
         checkpoint = torch.load(resume_path)
-        self.start_epoch = checkpoint['epoch'] + 1
+        self.start_epoch =  ['epoch'] + 1
         self.mnt_best = checkpoint['monitor_best']
         self.model.load_state_dict(checkpoint['state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
@@ -200,8 +200,19 @@ class Trainer(BaseTrainer):
             torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
             self.optimizer.step()
         log = {'train_loss': train_loss / len(self.train_dataloader)}
-        print("Output",output.size())
+
         valid_loss = 0
+        self.model.eval()
+        with torch.no_grad():
+            for batch_idx, (images_id, images, reports_ids, reports_masks) in enumerate(self.val_dataloader):
+            images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(
+                self.device)
+            output = self.model(images, reports_ids, mode='train')
+            loss = self.criterion(output, reports_ids, reports_masks)
+            valid_loss += loss.item()
+            self.optimizer.zero_grad()
+            log.update(**{'valid_loss': valid_loss / len(self.val_dataloader)})
+            
         self.model.eval()
         with torch.no_grad():
             val_gts, val_res = [], []
@@ -209,16 +220,12 @@ class Trainer(BaseTrainer):
                 images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(
                     self.device), reports_masks.to(self.device)
                 output = self.model(images, mode='sample')
-                print("Output",output.size())
-                loss2 = self.criterion(output, reports_ids, reports_masks)
-                valid_loss += loss2.item()
                 reports = self.model.tokenizer.decode_batch(output.cpu().numpy())
                 ground_truths = self.model.tokenizer.decode_batch(reports_ids[:, 1:].cpu().numpy())
                 val_res.extend(reports)
                 val_gts.extend(ground_truths)
             val_met = self.metric_ftns({i: [gt] for i, gt in enumerate(val_gts)},
                                        {i: [re] for i, re in enumerate(val_res)})
-            log.update(**{'valid_loss': valid_loss / len(self.val_dataloader)})
             log.update(**{'val_' + k: v for k, v in val_met.items()})
 
         self.model.eval()
