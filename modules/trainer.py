@@ -205,12 +205,11 @@ class Trainer(BaseTrainer):
         self.model.eval()
         with torch.no_grad():
             for batch_idx, (images_id, images, reports_ids, reports_masks) in enumerate(self.val_dataloader):
-            images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(
-                self.device)
-            output = self.model(images, reports_ids, mode='train')
-            loss = self.criterion(output, reports_ids, reports_masks)
-            valid_loss += loss.item()
-            self.optimizer.zero_grad()
+                images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(
+                    self.device)
+                output = self.model(images, reports_ids, mode='train')
+                loss = self.criterion(output, reports_ids, reports_masks)
+                valid_loss += loss.item()
             log.update(**{'valid_loss': valid_loss / len(self.val_dataloader)})
             
         self.model.eval()
