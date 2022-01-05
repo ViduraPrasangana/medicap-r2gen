@@ -106,7 +106,7 @@ class BaseTrainer(object):
         plt.ylabel('losses')
         plt.legend(['Train','Valid'])
         plt.title('Train vs Valid Losses')
-        plt.savefig(self.output+'/loss.png')
+        plt.savefig(output)
         plt.show()
     def _print_best_to_file(self):
         crt_time = time.asctime(time.localtime(time.time()))
