@@ -5,6 +5,7 @@ import time
 import torch
 import pandas as pd
 from numpy import inf
+from tqdm import tqdm
 
 
 class BaseTrainer(object):
@@ -189,7 +190,8 @@ class Trainer(BaseTrainer):
 
         train_loss = 0
         self.model.train()
-        for batch_idx, (images_id, images, reports_ids, reports_masks) in enumerate(self.train_dataloader):
+        iter_wrapper = lambda x: tqdm(x, total=len(self.train_dataloader))
+        for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper(enumerate(self.train_dataloader)):
             images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(
                 self.device)
             output = self.model(images, reports_ids, mode='train')
