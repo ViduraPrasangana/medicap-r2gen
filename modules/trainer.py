@@ -6,6 +6,7 @@ import torch
 import pandas as pd
 from numpy import inf
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 
 class BaseTrainer(object):
@@ -51,9 +52,14 @@ class BaseTrainer(object):
 
     def train(self):
         not_improved_count = 0
+        train_losses = []
+        valid_losses = []
+
         for epoch in range(self.start_epoch, self.epochs + 1):
             result = self._train_epoch(epoch)
-
+            train_losses.append(result["train_loss"])
+            valid_losses.append(result["valid_loss"])
+            self.plot_diag(train_losses,valid_losses,self.args.save_dir+"/losses.png")
             # save logged informations into log dict
             log = {'epoch': epoch}
             log.update(result)
@@ -92,7 +98,16 @@ class BaseTrainer(object):
                 self._save_checkpoint(epoch, save_best=best)
         self._print_best()
         self._print_best_to_file()
-
+    
+    def plot_diag(self,train_losses, valid_losses,output):
+        plt.plot(train_losses,'-o')
+        plt.plot(valid_losses,'-o')
+        plt.xlabel('epoch')
+        plt.ylabel('losses')
+        plt.legend(['Train','Valid'])
+        plt.title('Train vs Valid Losses')
+        plt.savefig(self.output+'/loss.png')
+        plt.show()
     def _print_best_to_file(self):
         crt_time = time.asctime(time.localtime(time.time()))
         self.best_recorder['val']['time'] = crt_time
@@ -190,8 +205,8 @@ class Trainer(BaseTrainer):
 
         train_loss = 0
         self.model.train()
-        iter_wrapper = lambda x: tqdm(x, total=len(self.train_dataloader))
-        for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper(enumerate(self.train_dataloader)):
+        iter_wrapper_train = lambda x: tqdm(x, total=len(self.train_dataloader))
+        for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_train(enumerate(self.train_dataloader)):
             images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(
                 self.device)
             output = self.model(images, reports_ids, mode='train')
@@ -205,8 +220,9 @@ class Trainer(BaseTrainer):
 
         valid_loss = 0
         self.model.eval()
+        iter_wrapper_valid = lambda x: tqdm(x, total=len(self.val_dataloader))
         with torch.no_grad():
-            for batch_idx, (images_id, images, reports_ids, reports_masks) in enumerate(self.val_dataloader):
+            for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_valid(enumerate(self.val_dataloader)):
                 images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(
                     self.device)
                 output = self.model(images, reports_ids, mode='train')
@@ -217,7 +233,7 @@ class Trainer(BaseTrainer):
         self.model.eval()
         with torch.no_grad():
             val_gts, val_res = [], []
-            for batch_idx, (images_id, images, reports_ids, reports_masks) in enumerate(self.val_dataloader):
+            for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_valid(enumerate(self.val_dataloader)):
                 images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(
                     self.device), reports_masks.to(self.device)
                 output = self.model(images, mode='sample')
@@ -232,7 +248,7 @@ class Trainer(BaseTrainer):
         self.model.eval()
         with torch.no_grad():
             test_gts, test_res = [], []
-            for batch_idx, (images_id, images, reports_ids, reports_masks) in enumerate(self.test_dataloader):
+            for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_valid(enumerate(self.test_dataloader)):
                 images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(
                     self.device), reports_masks.to(self.device)
                 output = self.model(images, mode='sample')
