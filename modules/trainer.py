@@ -7,6 +7,7 @@ import pandas as pd
 from numpy import inf
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import json
 
 
 class BaseTrainer(object):
@@ -248,18 +249,33 @@ class Trainer(BaseTrainer):
         self.model.eval()
         with torch.no_grad():
             test_gts, test_res = [], []
+            out = []
             for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_valid(enumerate(self.test_dataloader)):
                 images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(
                     self.device), reports_masks.to(self.device)
                 output = self.model(images, mode='sample')
                 reports = self.model.tokenizer.decode_batch(output.cpu().numpy())
                 ground_truths = self.model.tokenizer.decode_batch(reports_ids[:, 1:].cpu().numpy())
+                for i,e in enumerate(reports):
+                    dic = {}
+                    dic["id"] = images_id[i]
+                    dic["predict"] = reports[i]
+                    dic["ground_truth"] = ground_truths[i]
+                    out.append(dic)
                 test_res.extend(reports)
                 test_gts.extend(ground_truths)
             test_met = self.metric_ftns({i: [gt] for i, gt in enumerate(test_gts)},
                                         {i: [re] for i, re in enumerate(test_res)})
             log.update(**{'test_' + k: v for k, v in test_met.items()})
+            self.dump_result(out,self.args.save_dir+"/results_epoch_"+str(epoch)+".json")
+        
 
         self.lr_scheduler.step()
 
         return log
+
+    def dump_result(self, predictions, path):
+
+        with open(path, 'w') as f:
+            json.dump(predictions, f, indent=4, sort_keys=True)
+
