@@ -8,7 +8,9 @@ from numpy import inf
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import json
+import wandb
 
+wandb.init(project="medicap", entity="vidura")
 
 class BaseTrainer(object):
     def __init__(self, model, criterion, metric_ftns, optimizer, args):
@@ -201,6 +203,12 @@ class Trainer(BaseTrainer):
         self.train_dataloader = train_dataloader
         self.val_dataloader = val_dataloader
         self.test_dataloader = test_dataloader
+        wandb.config = {
+            "learning_rate": lr_scheduler.get_lr()[0],
+            "epochs": args.epochs,
+            "batch_size": args.batch_size
+        }
+
 
     def _train_epoch(self, epoch):
 
@@ -218,6 +226,7 @@ class Trainer(BaseTrainer):
             torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
             self.optimizer.step()
         log = {'train_loss': train_loss / len(self.train_dataloader)}
+        wandb.log({'lr': self.lr_scheduler.get_lr()[0],"loss": train_loss / len(self.train_dataloader)})
 
         valid_loss = 0
         self.model.eval()
