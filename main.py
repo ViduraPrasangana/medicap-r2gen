@@ -8,7 +8,7 @@ from modules.optimizers import build_optimizer, build_lr_scheduler
 from modules.trainer import Trainer
 from modules.loss import compute_loss
 from models.r2gen import R2GenModel
-
+import wandb
 
 def parse_agrs():
     parser = argparse.ArgumentParser()
@@ -82,6 +82,7 @@ def parse_agrs():
     parser.add_argument('--seed', type=int, default=9233, help='.')
     parser.add_argument('--resume', type=str, help='whether to resume the training from existing checkpoints.')
     parser.add_argument('--chexnet_checkpoint', type=str,default="model.pth.tar", help='cheXnet checkpoint.')
+    parser.add_argument('--wandb_id', type=str, help='Wandb run id.')
 
     args = parser.parse_args()
     return args
@@ -90,7 +91,7 @@ def parse_agrs():
 def main():
     # parse arguments
     args = parse_agrs()
-
+    wandb.init(id=args.wandb_id, project="medicap", entity="vidura", resume=True)
     # fix random seeds
     torch.manual_seed(args.seed)
     torch.backends.cudnn.deterministic = True
