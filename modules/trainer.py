@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import json
 import wandb
 
-wandb.init(project="medicap", entity="vidura")
+# wandb.init(project="medicap", entity="vidura", resume=True)
 
 class BaseTrainer(object):
     def __init__(self, model, criterion, metric_ftns, optimizer, args):
