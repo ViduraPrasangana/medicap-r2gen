@@ -226,7 +226,7 @@ class Trainer(BaseTrainer):
             torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
             self.optimizer.step()
         log = {'train_loss': train_loss / len(self.train_dataloader)}
-        wandb.log({'lr': self.lr_scheduler.get_lr()[0],"loss": train_loss / len(self.train_dataloader)})
+        
         wandb.watch(self.model)
 
         valid_loss = 0
@@ -279,7 +279,9 @@ class Trainer(BaseTrainer):
             log.update(**{'test_' + k: v for k, v in test_met.items()})
             self.dump_result(out,self.args.save_dir+"/results_epoch_"+str(epoch)+".json")
         
-
+        wandblog = {'Learning rate': self.lr_scheduler.get_lr()[0],"Train loss": train_loss / len(self.train_dataloader),'Valid loss': valid_loss / len(self.val_dataloader)}
+        wandblog.update(**{k: v for k, v in test_met.items()})
+        wandb.log(wandblog)
         self.lr_scheduler.step()
 
         return log
