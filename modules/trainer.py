@@ -213,19 +213,20 @@ class Trainer(BaseTrainer):
     def _train_epoch(self, epoch):
 
         train_loss = 0
-        self.model.train()
-        iter_wrapper_train = lambda x: tqdm(x, total=len(self.train_dataloader))
-        for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_train(enumerate(self.train_dataloader)):
-            images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(
-                self.device)
-            output = self.model(images, reports_ids, mode='train')
-            loss = self.criterion(output, reports_ids, reports_masks)
-            train_loss += loss.item()
-            self.optimizer.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
-            self.optimizer.step()
-        log = {'train_loss': train_loss / len(self.train_dataloader)}
+        if(self.args.test is None):
+            self.model.train()
+            iter_wrapper_train = lambda x: tqdm(x, total=len(self.train_dataloader))
+            for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_train(enumerate(self.train_dataloader)):
+                images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(
+                    self.device)
+                output = self.model(images, reports_ids, mode='train')
+                loss = self.criterion(output, reports_ids, reports_masks)
+                train_loss += loss.item()
+                self.optimizer.zero_grad()
+                loss.backward()
+                torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
+                self.optimizer.step()
+            log = {'train_loss': train_loss / len(self.train_dataloader)}
         
         wandb.watch(self.model)
 

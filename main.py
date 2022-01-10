@@ -83,6 +83,7 @@ def parse_agrs():
     parser.add_argument('--resume', type=str, help='whether to resume the training from existing checkpoints.')
     parser.add_argument('--chexnet_checkpoint', type=str,default="model.pth.tar", help='cheXnet checkpoint.')
     parser.add_argument('--wandb_id', type=str, help='Wandb run id.')
+    parser.add_argument('--test', type=str, help='Wandb run id.')
 
     args = parser.parse_args()
     return args
