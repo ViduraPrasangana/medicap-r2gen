@@ -259,6 +259,7 @@ class Trainer(BaseTrainer):
             log.update(**{'val_' + k: v for k, v in val_met.items()})
 
         self.model.eval()
+        wandb_data = []
         with torch.no_grad():
             test_gts, test_res = [], []
             out = []
@@ -273,6 +274,7 @@ class Trainer(BaseTrainer):
                     dic["id"] = images_id[i]
                     dic["predict"] = reports[i]
                     dic["ground_truth"] = ground_truths[i]
+                    wandb_data.append([images_id[i],ground_truths[i],reports[i]])
                     out.append(dic)
                 test_res.extend(reports)
                 test_gts.extend(ground_truths)
@@ -281,7 +283,9 @@ class Trainer(BaseTrainer):
             log.update(**{'test_' + k: v for k, v in test_met.items()})
             self.dump_result(out,self.args.save_dir+"/results_epoch_"+str(epoch)+".json")
         
-        wandblog = {'Learning rate': self.lr_scheduler.get_lr()[0],"Train loss": train_loss / len(self.train_dataloader),'Valid loss': valid_loss / len(self.val_dataloader)}
+        columns = ["Id","Ground truth","Prediction"]
+        wandb_table = wandb.Table(data=wandb_data, columns=columns)
+        wandblog = {'results':wandb_table,'Learning rate': self.lr_scheduler.get_lr()[0],"Train loss": train_loss / len(self.train_dataloader),'Valid loss': valid_loss / len(self.val_dataloader)}
         wandblog.update(**{k: v for k, v in test_met.items()})
         wandb.log(wandblog)
         self.lr_scheduler.step()
