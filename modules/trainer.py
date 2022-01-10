@@ -213,6 +213,7 @@ class Trainer(BaseTrainer):
     def _train_epoch(self, epoch):
 
         train_loss = 0
+        log = {}
         if(self.args.test is None):
             self.model.train()
             iter_wrapper_train = lambda x: tqdm(x, total=len(self.train_dataloader))
