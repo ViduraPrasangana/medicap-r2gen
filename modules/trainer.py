@@ -262,7 +262,7 @@ class Trainer(BaseTrainer):
         wandb_data = []
         with torch.no_grad():
             test_gts, test_res = [], []
-            out = []
+            out = [{"epoch":epoch}]
             for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_valid(enumerate(self.test_dataloader)):
                 images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(
                     self.device), reports_masks.to(self.device)
