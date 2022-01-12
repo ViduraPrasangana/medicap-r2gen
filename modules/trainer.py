@@ -157,7 +157,9 @@ class BaseTrainer(object):
         print("Saving checkpoint: {} ...".format(filename))
         if save_best:
             best_path = os.path.join(self.checkpoint_dir, 'model_best.pth')
+            wandb_best_path = os.path.join(wandb.run.dir, 'model_best.pth')
             torch.save(state, best_path)
+            torch.save(state, wandb_best_path)
             print("Saving current best: model_best.pth ...")
 
     def _resume_checkpoint(self, resume_path):
@@ -259,7 +261,7 @@ class Trainer(BaseTrainer):
             log.update(**{'val_' + k: v for k, v in val_met.items()})
 
         self.model.eval()
-        wandb_data = []
+        wandb_data = [["epoch_"+str(epoch),"epoch_"+str(epoch),"epoch_"+str(epoch)]]
         with torch.no_grad():
             test_gts, test_res = [], []
             out = [{"epoch":epoch}]
