@@ -12,6 +12,10 @@ class R2GenModel(nn.Module):
         self.args = args
         self.tokenizer = tokenizer
         self.visual_extractor = VisualExtractor(args)
+        if(args.compare is not None):
+            self.visual_extractor2 = VisualExtractor(args,args.compare)
+            self.compare_visual_models(self.visual_extractor,self.visual_extractor2)
+
         self.encoder_decoder = EncoderDecoder(args, tokenizer)
         if args.dataset_name == 'iu_xray':
             self.forward = self.forward_iu_xray
@@ -23,6 +27,14 @@ class R2GenModel(nn.Module):
         params = sum([np.prod(p.size()) for p in model_parameters])
         return super().__str__() + '\nTrainable parameters: {}'.format(params)
 
+    def compare_visual_models(self,m1,m2):
+        for p1, p2 in zip(m1.parameters(), m2.parameters()):
+            if p1.data.ne(p2.data).sum() > 0:
+                print("false")
+            else :
+                print("true")
+        return True
+    
     def forward_iu_xray(self, images, targets=None, mode='train'):
         # print("input",images.size())
         att_feats_0, fc_feats_0 = self.visual_extractor(images[:, 0])

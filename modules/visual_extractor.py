@@ -7,7 +7,7 @@ from torchinfo import summary
 
 
 class VisualExtractor(nn.Module):
-    def __init__(self, args):
+    def __init__(self, args,second = None):
         super(VisualExtractor, self).__init__()
         self.visual_extractor = args.visual_extractor
         self.pretrained = args.visual_extractor_pretrained
@@ -15,7 +15,8 @@ class VisualExtractor(nn.Module):
             model = DenseNet121()
             if os.path.isfile(args.chexnet_checkpoint):
                 print("=> loading checkpoint")
-                checkpoint = torch.load(args.chexnet_checkpoint)
+                if(second is not None):
+                    checkpoint = torch.load(second)
                 state_dict = checkpoint['state_dict']
                 for key in list(state_dict.keys()):
                     state_dict[key[7:].replace('.1.', '1.'). replace('.2.', '2.')] = state_dict.pop(key)
