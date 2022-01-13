@@ -17,6 +17,8 @@ class VisualExtractor(nn.Module):
                 print("=> loading checkpoint")
                 if(second is not None):
                     checkpoint = torch.load(second)
+                else:
+                    checkpoint = torch.load(chexnet_checkpoint)
                 state_dict = checkpoint['state_dict']
                 for key in list(state_dict.keys()):
                     state_dict[key[7:].replace('.1.', '1.'). replace('.2.', '2.')] = state_dict.pop(key)
