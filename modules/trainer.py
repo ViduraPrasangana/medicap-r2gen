@@ -152,7 +152,7 @@ class BaseTrainer(object):
             'optimizer': self.optimizer.state_dict(),
             'monitor_best': self.mnt_best
         }
-        filename = os.path.join(self.checkpoint_dir, 'current_checkpoint.pth')
+        filename = os.path.join(self.checkpoint_dir, 'current_checkpoint_'+str(epoch)+'.pth')
         torch.save(state, filename)
         print("Saving checkpoint: {} ...".format(filename))
         if save_best:
