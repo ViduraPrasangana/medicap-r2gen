@@ -45,6 +45,8 @@ class BaseTrainer(object):
 
         if args.resume is not None:
             self._resume_checkpoint(args.resume)
+        if args.contrastive is not None:
+            self._load_contrastive(args.contrastive)
 
         self.best_recorder = {'val': {self.mnt_metric: self.mnt_best},
                               'test': {self.mnt_metric_test: self.mnt_best}}
