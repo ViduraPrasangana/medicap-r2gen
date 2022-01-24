@@ -173,6 +173,14 @@ class BaseTrainer(object):
 
         print("Checkpoint loaded. Resume training from epoch {}".format(self.start_epoch))
 
+    def _load_contrastive(self, contrastive_path):
+        contrastive_path = str(contrastive_path)
+        print("Loading contrastive model: {} ...".format(contrastive_path))
+        checkpoint = torch.load(contrastive_path)
+        self.model.load_state_dict(checkpoint['visual_extractor_model'], strict = False)
+
+        print("Contrastive model loaded.")
+
     def _record_best(self, log):
         improved_val = (self.mnt_mode == 'min' and log[self.mnt_metric] <= self.best_recorder['val'][
             self.mnt_metric]) or \
