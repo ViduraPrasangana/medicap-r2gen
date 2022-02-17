@@ -49,4 +49,3 @@ class R2GenModel(nn.Module):
         else:
             raise ValueError
         return output
-

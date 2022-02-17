@@ -46,8 +46,8 @@ class BaseTrainer(object):
 
         if args.resume is not None:
             self._resume_checkpoint(args.resume)
-        if args.contrastive is not None:
-            self._load_contrastive(args.contrastive)
+        # if args.contrastive is not None:
+        #     self._load_contrastive(args.contrastive)
 
         self.best_recorder = {'val': {self.mnt_metric: self.mnt_best},
                               'test': {self.mnt_metric_test: self.mnt_best}}
@@ -110,7 +110,7 @@ class BaseTrainer(object):
                 self._save_checkpoint(epoch, save_best=best)
         self._print_best()
         self._print_best_to_file()
-        self.__save_json(complete_reslts, 'r2gen_base_model_train_logs')
+        self.__save_json(complete_reslts, 'r2gen_model_train_logs')
         print("end r2gen model train")
 
     def __save_json(self, result, record_name):
