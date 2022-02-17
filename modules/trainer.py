@@ -5,7 +5,13 @@ import time
 import torch
 import pandas as pd
 from numpy import inf
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+import json
+import wandb
 
+
+# wandb.init(project="medicap", entity="vidura", resume=True)
 
 class BaseTrainer(object):
     def __init__(self, model, criterion, metric_ftns, optimizer, args):
@@ -40,6 +46,8 @@ class BaseTrainer(object):
 
         if args.resume is not None:
             self._resume_checkpoint(args.resume)
+        if args.contrastive is not None:
+            self._load_contrastive(args.contrastive)
 
         self.best_recorder = {'val': {self.mnt_metric: self.mnt_best},
                               'test': {self.mnt_metric_test: self.mnt_best}}
@@ -50,9 +58,17 @@ class BaseTrainer(object):
 
     def train(self):
         not_improved_count = 0
-        for epoch in range(self.start_epoch, self.epochs + 1):
-            result = self._train_epoch(epoch)
+        train_losses = []
+        valid_losses = []
+        complete_reslts = {}
+        print("start train")
 
+        for epoch in range(self.start_epoch, self.epochs + 1):
+            epoch_reslts = {}
+            result = self._train_epoch(epoch)
+            train_losses.append(result["train_loss"])
+            valid_losses.append(result["valid_loss"])
+            self.plot_diag(train_losses, valid_losses, self.args.save_dir + "/losses.png")
             # save logged informations into log dict
             log = {'epoch': epoch}
             log.update(result)
@@ -60,7 +76,10 @@ class BaseTrainer(object):
 
             # print logged informations to the screen
             for key, value in log.items():
+                epoch_reslts[str(key)] = value
                 print('\t{:15s}: {}'.format(str(key), value))
+
+            complete_reslts[epoch] = epoch_reslts
 
             # evaluate model performance according to configured metric, save best checkpoint as model_best
             best = False
@@ -91,6 +110,27 @@ class BaseTrainer(object):
                 self._save_checkpoint(epoch, save_best=best)
         self._print_best()
         self._print_best_to_file()
+        self.__save_json(complete_reslts, 'r2gen_base_model_train_logs')
+        print("end r2gen model train")
+
+    def __save_json(self, result, record_name):
+        result_path = self.args.record_dir
+
+        if not os.path.exists(result_path):
+            os.makedirs(result_path)
+        with open(os.path.join(result_path, '{}.json'.format(record_name)), 'w') as f:
+            json.dump(result, f)
+        print("logs saved in", result_path)
+
+    def plot_diag(self, train_losses, valid_losses, output):
+        plt.plot(train_losses, '-o')
+        plt.plot(valid_losses, '-o')
+        plt.xlabel('epoch')
+        plt.ylabel('losses')
+        plt.legend(['Train', 'Valid'])
+        plt.title('Train vs Valid Losses')
+        plt.savefig(output)
+        plt.show()
 
     def _print_best_to_file(self):
         crt_time = time.asctime(time.localtime(time.time()))
@@ -103,7 +143,7 @@ class BaseTrainer(object):
 
         if not os.path.exists(self.args.record_dir):
             os.makedirs(self.args.record_dir)
-        record_path = os.path.join(self.args.record_dir, self.args.dataset_name+'.csv')
+        record_path = os.path.join(self.args.record_dir, self.args.dataset_name + '.csv')
         if not os.path.exists(record_path):
             record_table = pd.DataFrame()
         else:
@@ -138,7 +178,9 @@ class BaseTrainer(object):
         print("Saving checkpoint: {} ...".format(filename))
         if save_best:
             best_path = os.path.join(self.checkpoint_dir, 'model_best.pth')
+            wandb_best_path = os.path.join(wandb.run.dir, 'model_best.pth')
             torch.save(state, best_path)
+            torch.save(state, wandb_best_path)
             print("Saving current best: model_best.pth ...")
 
     def _resume_checkpoint(self, resume_path):
@@ -151,6 +193,14 @@ class BaseTrainer(object):
         self.optimizer.load_state_dict(checkpoint['optimizer'])
 
         print("Checkpoint loaded. Resume training from epoch {}".format(self.start_epoch))
+
+    def _load_contrastive(self, contrastive_path):
+        contrastive_path = str(contrastive_path)
+        print("Loading contrastive model: {} ...".format(contrastive_path))
+        checkpoint = torch.load(contrastive_path)
+        self.model.load_state_dict(checkpoint['visual_extractor_model'], strict=False)
+
+        print("Contrastive model loaded.")
 
     def _record_best(self, log):
         improved_val = (self.mnt_mode == 'min' and log[self.mnt_metric] <= self.best_recorder['val'][
@@ -177,34 +227,54 @@ class BaseTrainer(object):
 
 
 class Trainer(BaseTrainer):
-    def __init__(self, model, criterion, metric_ftns, optimizer, args, lr_scheduler, train_dataloader, val_dataloader,
-                 test_dataloader):
+    def __init__(self, model, criterion, metric_ftns, optimizer, args, lr_scheduler, train_dataloader, val_dataloader, test_dataloader):
         super(Trainer, self).__init__(model, criterion, metric_ftns, optimizer, args)
         self.lr_scheduler = lr_scheduler
         self.train_dataloader = train_dataloader
         self.val_dataloader = val_dataloader
         self.test_dataloader = test_dataloader
+        # wandb.config = {
+        #     "learning_rate": lr_scheduler.get_lr()[0],
+        #     "epochs": args.epochs,
+        #     "batch_size": args.batch_size
+        # }
 
     def _train_epoch(self, epoch):
 
         train_loss = 0
-        self.model.train()
-        for batch_idx, (images_id, images, reports_ids, reports_masks) in enumerate(self.train_dataloader):
-            images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(
-                self.device)
-            output = self.model(images, reports_ids, mode='train')
-            loss = self.criterion(output, reports_ids, reports_masks)
-            train_loss += loss.item()
-            self.optimizer.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
-            self.optimizer.step()
-        log = {'train_loss': train_loss / len(self.train_dataloader)}
+        log = {'train_loss': 0}
+        if (self.args.test is None):
+            self.model.train()
+            iter_wrapper_train = lambda x: tqdm(x, total=len(self.train_dataloader))
+            for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_train(enumerate(self.train_dataloader)):
+                images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(self.device)
+                output = self.model(images, reports_ids, mode='train')
+                loss = self.criterion(output, reports_ids, reports_masks)
+                train_loss += loss.item()
+                self.optimizer.zero_grad()
+                loss.backward()
+                torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
+                self.optimizer.step()
+            log = {'train_loss': train_loss / len(self.train_dataloader)}
+
+        # wandb.watch(self.model)
+
+        valid_loss = 0
+        self.model.eval()
+        iter_wrapper_valid = lambda x: tqdm(x, total=len(self.val_dataloader))
+        with torch.no_grad():
+            for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_valid(enumerate(self.val_dataloader)):
+                images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(self.device)
+                output = self.model(images, reports_ids, mode='train')
+                loss = self.criterion(output, reports_ids, reports_masks)
+                valid_loss += loss.item()
+            log.update(**{'valid_loss': valid_loss / len(self.val_dataloader)})
 
         self.model.eval()
         with torch.no_grad():
             val_gts, val_res = [], []
-            for batch_idx, (images_id, images, reports_ids, reports_masks) in enumerate(self.val_dataloader):
+            for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_valid(
+                    enumerate(self.val_dataloader)):
                 images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(
                     self.device), reports_masks.to(self.device)
                 output = self.model(images, mode='sample')
@@ -217,20 +287,37 @@ class Trainer(BaseTrainer):
             log.update(**{'val_' + k: v for k, v in val_met.items()})
 
         self.model.eval()
+        # wandb_data = [["epoch_" + str(epoch), "epoch_" + str(epoch), "epoch_" + str(epoch)]]
         with torch.no_grad():
             test_gts, test_res = [], []
-            for batch_idx, (images_id, images, reports_ids, reports_masks) in enumerate(self.test_dataloader):
+            out = [{"epoch": epoch}]
+            for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_valid(
+                    enumerate(self.test_dataloader)):
                 images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(
                     self.device), reports_masks.to(self.device)
                 output = self.model(images, mode='sample')
                 reports = self.model.tokenizer.decode_batch(output.cpu().numpy())
                 ground_truths = self.model.tokenizer.decode_batch(reports_ids[:, 1:].cpu().numpy())
+                for i, e in enumerate(reports):
+                    dic = {}
+                    dic["id"] = images_id[i]
+                    dic["predict"] = reports[i]
+                    dic["ground_truth"] = ground_truths[i]
+                    # wandb_data.append([images_id[i], ground_truths[i], reports[i]])
+                    out.append(dic)
                 test_res.extend(reports)
                 test_gts.extend(ground_truths)
             test_met = self.metric_ftns({i: [gt] for i, gt in enumerate(test_gts)},
                                         {i: [re] for i, re in enumerate(test_res)})
             log.update(**{'test_' + k: v for k, v in test_met.items()})
 
+        columns = ["Id", "Ground truth", "Prediction"]
+        # wandb_table = wandb.Table(data=wandb_data, columns=columns)
+        # wandblog = {'results': wandb_table, 'Learning rate': self.lr_scheduler.get_lr()[0],
+        #             "Train loss": train_loss / len(self.train_dataloader),
+        #             'Valid loss': valid_loss / len(self.val_dataloader)}
+        # wandblog.update(**{k: v for k, v in test_met.items()})
+        # wandb.log(wandblog)
         self.lr_scheduler.step()
 
         return log
