@@ -17,6 +17,11 @@ class VisualExtractor(nn.Module):
                 print("=> loading checkpoint")
                 checkpoint = torch.load(args.chexnet_checkpoint)
                 state_dict = checkpoint['state_dict']
+
+                # replace key
+                for item in state_dict.items():
+                    item[0].replace("e.densenet121", "densenet121")
+
                 for key in list(state_dict.keys()):
                     state_dict[key[7:].replace('.1.', '1.'). replace('.2.', '2.')] = state_dict.pop(key)
                 model.load_state_dict(state_dict,strict=True)
