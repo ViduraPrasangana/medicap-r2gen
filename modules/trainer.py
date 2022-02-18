@@ -257,6 +257,7 @@ class Trainer(BaseTrainer):
             for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_train(enumerate(self.train_dataloader)):
                 images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(self.device)
                 output = self.model(images, reports_ids, mode='train')
+                print(output.shape)
                 loss = self.criterion(output, reports_ids, reports_masks)
                 train_loss += loss.item()
                 self.optimizer.zero_grad()
