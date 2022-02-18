@@ -257,7 +257,7 @@ class Trainer(BaseTrainer):
             for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_train(enumerate(self.train_dataloader)):
                 images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(self.device)
                 output = self.model(images, reports_ids, mode='train')
-                print(output.shape)
+                # print(output.shape)
                 loss = self.criterion(output, reports_ids, reports_masks)
                 train_loss += loss.item()
                 self.optimizer.zero_grad()
@@ -282,10 +282,8 @@ class Trainer(BaseTrainer):
         self.model.eval()
         with torch.no_grad():
             val_gts, val_res = [], []
-            for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_valid(
-                    enumerate(self.val_dataloader)):
-                images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(
-                    self.device), reports_masks.to(self.device)
+            for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_valid(enumerate(self.val_dataloader)):
+                images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(self.device)
                 output = self.model(images, mode='sample')
                 reports = self.model.tokenizer.decode_batch(output.cpu().numpy())
                 ground_truths = self.model.tokenizer.decode_batch(reports_ids[:, 1:].cpu().numpy())
