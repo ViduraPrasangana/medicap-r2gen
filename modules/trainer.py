@@ -233,11 +233,11 @@ class Trainer(BaseTrainer):
         self.train_dataloader = train_dataloader
         self.val_dataloader = val_dataloader
         self.test_dataloader = test_dataloader
-        # wandb.config = {
-        #     "learning_rate": lr_scheduler.get_lr()[0],
-        #     "epochs": args.epochs,
-        #     "batch_size": args.batch_size
-        # }
+        wandb.config = {
+            "learning_rate": lr_scheduler.get_lr()[0],
+            "epochs": args.epochs,
+            "batch_size": args.batch_size
+        }
 
     def _train_epoch(self, epoch):
 
@@ -257,7 +257,7 @@ class Trainer(BaseTrainer):
                 self.optimizer.step()
             log = {'train_loss': train_loss / len(self.train_dataloader)}
 
-        # wandb.watch(self.model)
+        wandb.watch(self.model)
 
         valid_loss = 0
         self.model.eval()
@@ -287,7 +287,7 @@ class Trainer(BaseTrainer):
             log.update(**{'val_' + k: v for k, v in val_met.items()})
 
         self.model.eval()
-        # wandb_data = [["epoch_" + str(epoch), "epoch_" + str(epoch), "epoch_" + str(epoch)]]
+        wandb_data = [["epoch_" + str(epoch), "epoch_" + str(epoch), "epoch_" + str(epoch)]]
         with torch.no_grad():
             test_gts, test_res = [], []
             out = [{"epoch": epoch}]
@@ -303,7 +303,7 @@ class Trainer(BaseTrainer):
                     dic["id"] = images_id[i]
                     dic["predict"] = reports[i]
                     dic["ground_truth"] = ground_truths[i]
-                    # wandb_data.append([images_id[i], ground_truths[i], reports[i]])
+                    wandb_data.append([images_id[i], ground_truths[i], reports[i]])
                     out.append(dic)
                 test_res.extend(reports)
                 test_gts.extend(ground_truths)
@@ -312,12 +312,12 @@ class Trainer(BaseTrainer):
             log.update(**{'test_' + k: v for k, v in test_met.items()})
 
         columns = ["Id", "Ground truth", "Prediction"]
-        # wandb_table = wandb.Table(data=wandb_data, columns=columns)
-        # wandblog = {'results': wandb_table, 'Learning rate': self.lr_scheduler.get_lr()[0],
-        #             "Train loss": train_loss / len(self.train_dataloader),
-        #             'Valid loss': valid_loss / len(self.val_dataloader)}
-        # wandblog.update(**{k: v for k, v in test_met.items()})
-        # wandb.log(wandblog)
+        wandb_table = wandb.Table(data=wandb_data, columns=columns)
+        wandblog = {'results': wandb_table, 'Learning rate': self.lr_scheduler.get_lr()[0],
+                    "Train loss": train_loss / len(self.train_dataloader),
+                    'Valid loss': valid_loss / len(self.val_dataloader)}
+        wandblog.update(**{k: v for k, v in test_met.items()})
+        wandb.log(wandblog)
         self.lr_scheduler.step()
 
         return log
