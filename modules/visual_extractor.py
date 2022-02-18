@@ -19,8 +19,8 @@ class VisualExtractor(nn.Module):
                 state_dict = checkpoint['state_dict']
 
                 # replace key
-                for item in state_dict.items():
-                    item[0].replace("e.densenet121", "densenet121")
+                for key in list(state_dict.keys()):
+                    state_dict[key.replace("backbone.densenet121", "densenet121")] = state_dict.pop(key)
 
                 for key in list(state_dict.keys()):
                     state_dict[key[7:].replace('.1.', '1.'). replace('.2.', '2.')] = state_dict.pop(key)
