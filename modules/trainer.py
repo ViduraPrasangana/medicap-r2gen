@@ -295,11 +295,12 @@ class Trainer(BaseTrainer):
 
         result_caption = {}
         self.model.eval()
+        iter_wrapper_test = lambda x: tqdm(x, total=len(self.test_dataloader))
         wandb_data = [["epoch_" + str(epoch), "epoch_" + str(epoch), "epoch_" + str(epoch)]]
         with torch.no_grad():
             test_gts, test_res = [], []
             out = [{"epoch": epoch}]
-            for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_valid(enumerate(self.test_dataloader)):
+            for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_test(enumerate(self.test_dataloader)):
                 images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(self.device)
                 output = self.model(images, mode='sample')
                 reports = self.model.tokenizer.decode_batch(output.cpu().numpy())
