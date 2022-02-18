@@ -22,15 +22,14 @@ class VisualExtractor(nn.Module):
                 for key in list(state_dict.keys()):
                     state_dict[key.replace("backbone.densenet121", "densenet121")] = state_dict.pop(key)
 
-                for key in list(state_dict.keys()):
-                    print(key)
+                # for key in list(state_dict.keys()):
+                #     print(key)
 
-                print("")
-                for key in list(state_dict.keys()):
-                    state_dict[key[7:].replace('.1.', '1.'). replace('.2.', '2.')] = state_dict.pop(key)
+                # for key in list(state_dict.keys()):
+                #     state_dict[key[7:].replace('.1.', '1.'). replace('.2.', '2.')] = state_dict.pop(key)
 
-                for key in list(state_dict.keys()):
-                    print(key)
+                # for key in list(state_dict.keys()):
+                #     print(key)
 
                 model.load_state_dict(state_dict,strict=True)
                 model = model.get_model()
