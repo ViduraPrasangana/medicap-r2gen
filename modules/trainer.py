@@ -65,7 +65,7 @@ class BaseTrainer(object):
 
         for epoch in range(self.start_epoch, self.epochs + 1):
             epoch_reslts = {}
-            result = self._train_epoch(epoch)
+            result, result_caption = self._train_epoch(epoch)
             train_losses.append(result["train_loss"])
             valid_losses.append(result["valid_loss"])
             self.plot_diag(train_losses, valid_losses, self.args.save_dir + "/losses.png")
@@ -242,6 +242,7 @@ class Trainer(BaseTrainer):
             "epochs": args.epochs,
             "batch_size": args.batch_size
         }
+        print("train, validation, test -", len(train_dataloader), len(val_dataloader), len(test_dataloader))
 
     def _train_epoch(self, epoch):
 
@@ -290,15 +291,14 @@ class Trainer(BaseTrainer):
                                        {i: [re] for i, re in enumerate(val_res)})
             log.update(**{'val_' + k: v for k, v in val_met.items()})
 
+        result_caption = {}
         self.model.eval()
         wandb_data = [["epoch_" + str(epoch), "epoch_" + str(epoch), "epoch_" + str(epoch)]]
         with torch.no_grad():
             test_gts, test_res = [], []
             out = [{"epoch": epoch}]
-            for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_valid(
-                    enumerate(self.test_dataloader)):
-                images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(
-                    self.device), reports_masks.to(self.device)
+            for batch_idx, (images_id, images, reports_ids, reports_masks) in iter_wrapper_valid(enumerate(self.test_dataloader)):
+                images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(self.device)
                 output = self.model(images, mode='sample')
                 reports = self.model.tokenizer.decode_batch(output.cpu().numpy())
                 ground_truths = self.model.tokenizer.decode_batch(reports_ids[:, 1:].cpu().numpy())
@@ -311,6 +311,19 @@ class Trainer(BaseTrainer):
                     out.append(dic)
                 test_res.extend(reports)
                 test_gts.extend(ground_truths)
+
+                print(ground_truths)
+                print(reports, "\n")
+                print("each results\n")
+
+                for index in range(len(images_id)):
+                    image_id, real_sent, pred_sent = images_id[index], ground_truths[index], reports[index]
+                    print(image_id, "real_sent - ", real_sent, "pred_sent - ",pred_sent)
+                    result_caption[image_id] = {
+                        'Image id': image_id,
+                        'Real Sent': real_sent,
+                        'Pred Sent': pred_sent,
+                    }
             test_met = self.metric_ftns({i: [gt] for i, gt in enumerate(test_gts)},
                                         {i: [re] for i, re in enumerate(test_res)})
             log.update(**{'test_' + k: v for k, v in test_met.items()})
@@ -324,4 +337,4 @@ class Trainer(BaseTrainer):
         wandb.log(wandblog)
         self.lr_scheduler.step()
 
-        return log
+        return log, result_caption
