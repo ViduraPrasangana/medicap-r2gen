@@ -62,7 +62,7 @@ class BaseTrainer(object):
         valid_losses = []
         complete_reslts = {}
         best_caption = {}
-        print("start train")
+        print("start train : lr_ve -", self.args.lr_ve)
 
         for epoch in range(self.start_epoch, self.epochs + 1):
             epoch_reslts = {}
