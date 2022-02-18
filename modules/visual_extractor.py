@@ -19,7 +19,7 @@ class VisualExtractor(nn.Module):
                 state_dict = checkpoint['state_dict']
                 for key in list(state_dict.keys()):
                     state_dict[key[7:].replace('.1.', '1.'). replace('.2.', '2.')] = state_dict.pop(key)
-                model.load_state_dict(state_dict,strict=False)
+                model.load_state_dict(state_dict,strict=True)
                 model = model.get_model()
                 print("=> loaded checkpoint")
             else:

@@ -204,7 +204,7 @@ class BaseTrainer(object):
             contrastive_path = str(contrastive_path)
             print("Loading contrastive model: {} ...".format(contrastive_path))
             checkpoint = torch.load(contrastive_path)
-            self.model.load_state_dict(checkpoint['visual_extractor_model'], strict=False)
+            self.model.load_state_dict(checkpoint['visual_extractor_model'], strict=True)
             print("Contrastive model loaded.")
         except Exception as err:
             print("[Load Checkpoint Failed {}!]\n".format(err))
