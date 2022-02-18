@@ -31,6 +31,7 @@ class R2GenModel(nn.Module):
         fc_feats = torch.cat((fc_feats_0, fc_feats_1), dim=1)
         att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)
         # print("decoder in",att_feats.size())
+        print(att_feats.shape, fc_feats.shape)
         if mode == 'train':
             output = self.encoder_decoder(fc_feats, att_feats, targets, mode='forward')
             # print("decoder out",output.size())
