@@ -61,6 +61,7 @@ class BaseTrainer(object):
         train_losses = []
         valid_losses = []
         complete_reslts = {}
+        best_caption = {}
         print("start train")
 
         for epoch in range(self.start_epoch, self.epochs + 1):
@@ -98,6 +99,7 @@ class BaseTrainer(object):
                     self.mnt_best = log[self.mnt_metric]
                     not_improved_count = 0
                     best = True
+                    best_caption = result_caption
                 else:
                     not_improved_count += 1
 
@@ -111,6 +113,7 @@ class BaseTrainer(object):
         self._print_best()
         self._print_best_to_file()
         self.__save_json(complete_reslts, 'r2gen_model_train_logs')
+        self.__save_json(best_caption, 'r2gen_model_captions')
         print("end r2gen model train")
 
     def __save_json(self, result, record_name):
@@ -312,9 +315,9 @@ class Trainer(BaseTrainer):
                 test_res.extend(reports)
                 test_gts.extend(ground_truths)
 
-                print(ground_truths)
-                print(reports, "\n")
-                print("each results\n")
+                # print(ground_truths)
+                # print(reports, "\n")
+                # print("each results\n")
 
                 for index in range(len(images_id)):
                     image_id, real_sent, pred_sent = images_id[index], ground_truths[index], reports[index]
