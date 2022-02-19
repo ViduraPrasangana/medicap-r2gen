@@ -23,6 +23,10 @@ class VisualExtractor(nn.Module):
                     state_dict[key.replace("backbone.densenet121", "densenet121")] = state_dict.pop(key)
                 del state_dict["densenet121.classifier.0.bias"]
                 del state_dict["densenet121.classifier.0.weight"]
+
+                del state_dict["densenet121.classifier.2.bias"]
+                del state_dict["densenet121.classifier.2.weight"]
+
                 # for key in list(state_dict.keys()):
                 #     print(key)
 
