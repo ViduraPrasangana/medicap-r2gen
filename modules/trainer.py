@@ -52,6 +52,7 @@ class BaseTrainer(object):
         self.best_recorder = {'val': {self.mnt_metric: self.mnt_best},
                               'test': {self.mnt_metric_test: self.mnt_best}}
 
+
     @abstractmethod
     def _train_epoch(self, epoch):
         raise NotImplementedError
